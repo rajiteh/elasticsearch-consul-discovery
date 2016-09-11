@@ -62,9 +62,10 @@ import java.util.Set;
 
 public final class ConsulService {
 	private static final String CONSUL_HEALTH_CHECK_API_ENDPOINT_TEMPLATE =
-			"http://localhost:%d/v1/health/service/%s?%s";
+			"http://%s:%d/v1/health/service/%s?%s";
 
-	private final int consulAgentLocalWebServicePort;
+	private final int consulAgentWebServicePort;
+	private final String consulAgentWebServiceHost;
 	private final String tag;
 
 	/**
@@ -72,8 +73,9 @@ public final class ConsulService {
 	 *                   it is 8500
 	 * @param tag        if not null it will filter query on the tags
 	 */
-	public ConsulService(final int consulPort, final String tag) {
-		this.consulAgentLocalWebServicePort = consulPort;
+	public ConsulService(final int consulPort, final String consulHost, final String tag) {
+		this.consulAgentWebServicePort = consulPort;
+		this.consulAgentWebServiceHost = consulHost;
 		this.tag = tag;
 	}
 
@@ -83,7 +85,7 @@ public final class ConsulService {
 	 * <p/>
 	 * It does it by making HTTP API call to
 	 * <p/>
-	 * http://localhost:${consulAgentLocalWebServicePort}/v1/health/service/${serviceName
+	 * http://${consulAgentWebServiceHost}:${consulAgentWebServicePort}/v1/health/service/${serviceName
 	 * }?${queryParams}
 	 * <p/>
 	 * queryParams is ?passing by default if tag holds not null value it would be
@@ -101,7 +103,7 @@ public final class ConsulService {
 			final String apiResponse = Utility.readUrl(consulServiceHealthEndPoint);
 			HealthCheck[] healthChecks = new Gson().fromJson(apiResponse, HealthCheck[].class);
 			Arrays.stream(healthChecks).forEach(healthCheck -> {
-				result.add(new DiscoveryResult(healthCheck.getNode().getAddress(),
+				result.add(new DiscoveryResult(healthCheck.getService().getAddress(),
 						healthCheck.getService().getPort()));
 			});
 		}
@@ -116,7 +118,8 @@ public final class ConsulService {
 			queryParam.append(tag.trim());
 		}
 		return String.format(CONSUL_HEALTH_CHECK_API_ENDPOINT_TEMPLATE,
-				consulAgentLocalWebServicePort, serviceName,
-				queryParam.toString());
+				consulAgentWebServiceHost,
+				consulAgentWebServicePort,
+				serviceName, queryParam.toString());
 	}
 }
