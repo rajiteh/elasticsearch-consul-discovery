@@ -81,6 +81,7 @@ public class ConsulUnicastHostsProvider extends AbstractComponent implements Uni
 		this.transportService = transportService;
 		this.version = version;
 		this.consulServiceNames = new HashSet<>();
+		int localWsPort = -1;
 
 		final String[] serviceNamesArray = settings.getAsArray("discovery.consul.service-names");
 		for (String serviceName : serviceNamesArray) {
@@ -91,6 +92,15 @@ public class ConsulUnicastHostsProvider extends AbstractComponent implements Uni
 				".ws-host", "localhost");
 		this.consulAgentWebServicePort = settings.getAsInt("discovery.consul" +
 				".ws-port", 8500);
+
+		localWsPort = settings.getAsInt("discovery.consul" +
+				".local-ws-port", -1);
+		if (localWsPort != -1) {
+			logger.warn("Using discovey.consul.local-ws-port is deprecated. " +
+				"Prefer discovey.consul.ws-port.");
+			this.consulAgentWebServicePort = localWsPort;
+		}
+
 		this.tag = settings.get("discovery.consul.tag");
 	}
 
